@@ -103,10 +103,10 @@ pub fn fmt_align_fractions(fractions: &[FractionNumber], max_precision: u8) -> V
 /// ```
 /// ## Example Output
 /// ```text
-/// "  -42"
+/// "  -42     "
 /// "    0.3214"
-/// " 1000"
-/// "-1000.2"
+/// " 1000     "
+/// "-1000.2   "
 /// ```
 pub fn fmt_align_fraction_strings(strings: &[&str]) -> Vec<String> {
     // normalize all fractional parts
