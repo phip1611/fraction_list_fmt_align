@@ -34,45 +34,10 @@ SOFTWARE.
 //! ```
 //! ## Example Output
 //! ```text
-//! "  -42"
+//! "  -42     "
 //! "    0.3214"
-//! " 1000"
-//! "-1000.2"
-
-use regex::Regex;
-
-/// Internal structure that holds the parts of a fraction number string.
-/// Can represent e.g. "1", "3.14", or "-14.141".
-/// The fraction part is already optimized, i.e. Some("123000") becomes ("123"),
-/// "00000" becomes None etc.
-struct FractionNumberParts {
-    // if it has "-" sign
-    has_sign: bool,
-    whole_part: String,
-    fraction_part: Option<String>,
-}
-
-/// Splits a formatted fraction number into its parts.
-/// We expect only valid values at this point.
-fn get_fraction_number_parts(formatted_fraction_num: &str) -> FractionNumberParts {
-    let regex =
-        Regex::new("^(?P<sign>-)?(?P<whole_part>[0-9]+)(.(?P<fraction_part>[0-9]+))?$").unwrap();
-    let captures = regex.captures(formatted_fraction_num).unwrap();
-
-    let fraction_part = captures
-        .name("fraction_part")
-        .map(|x| x.as_str().to_owned());
-    let fraction_part = normalized_fraction_part_or_none(fraction_part);
-
-    FractionNumberParts {
-        has_sign: captures.name("sign").is_some(),
-        whole_part: captures
-            .name("whole_part")
-            .map(|x| x.as_str().to_owned())
-            .unwrap(),
-        fraction_part,
-    }
-}
+//! " 1000     "
+//! "-1000.2   "
 
 #[derive(Debug, Copy, Clone)]
 pub enum FractionNumber {
@@ -144,75 +109,84 @@ pub fn fmt_align_fractions(fractions: &[FractionNumber], max_precision: u8) -> V
 /// "-1000.2"
 /// ```
 pub fn fmt_align_fraction_strings(strings: &[&str]) -> Vec<String> {
-    let fract_parts = strings
-        .iter()
-        .map(|x| get_fraction_number_parts(*x))
-        .collect::<Vec<FractionNumberParts>>();
+    // normalize all fractional parts
+    let strings = strings.iter()
+        .map(|x| normalize_fraction_part(x))
+        .collect::<Vec<&str>>();
 
-    // the new formatted vectors
-    let mut new_formatted: Vec<String> = vec![String::new(); fract_parts.len()];
-
-    let max_digits_whole_part = fract_parts
-        .iter()
-        .map(|x| x.whole_part.len())
+    let max = strings.iter()
+        .map(|x| get_whole_part(x))
+        .map(|x| x.len())
         .max()
         .unwrap();
-    let max_digits_whole_part_with_sign = fract_parts
-        .iter()
-        .filter(|x| x.whole_part.len() == max_digits_whole_part)
-        .any(|x| x.has_sign);
 
-    fract_parts.iter().enumerate().for_each(|(index, f)| {
-        let max_len_whole_part_including_sign = if max_digits_whole_part_with_sign {
-            max_digits_whole_part + 1
-        } else {
-            max_digits_whole_part
-        };
-
-        let current_len = f.whole_part.len() + if f.has_sign { 1 } else { 0 };
-
-        let spaces = max_len_whole_part_including_sign - current_len;
-
-        let mut regular_format = f.whole_part.to_string();
-        if let Some(ref val) = f.fraction_part {
-            regular_format = format!("{}.{}", regular_format, val);
-        }
-        if f.has_sign {
-            regular_format = format!("-{}", regular_format);
-        }
-
-        let mut spaces_fmt = String::new();
-        for _ in 0..spaces {
-            spaces_fmt.push(' ');
-        }
-
-        new_formatted[index] = format!("{}{}", spaces_fmt, regular_format);
+    // create n new strings
+    let mut new_strings = vec![String::new(); strings.len()];
+    strings.iter().enumerate().for_each(|(index, string)| {
+        let whole_part = get_whole_part(string);
+        let spaces = max - whole_part.len();
+        new_strings[index].push_str(&" ".repeat(spaces));
+        new_strings[index].push_str(string);
     });
 
-    new_formatted
+    // now add spaces in the end so that all are exactly same aligned, on left
+    // as well as right; technically this is not really needed, but it may
+    // help in some situations. Also this can be easily revoked with a right trim.
+    let max = new_strings.iter().map(|s| s.len()).max().unwrap();
+    for string in &mut new_strings {
+        let spaces = max - string.len();
+        string.push_str(&" ".repeat(spaces))
+    }
+
+    new_strings
 }
 
-/// Takes the fraction part, removes all zeroes and afterwards returns
-/// the new fraction part string. If after the removing of the zeroes
-/// only "" is left, than None get's returned.
-fn normalized_fraction_part_or_none(mut fp: Option<String>) -> Option<String> {
-    fp = fp.map(|x| fraction_part_remove_zeroes(&x));
-    if fp.is_some() && fp.as_ref().unwrap().is_empty() {
-        None
+/// Get the whole part (TODO is this the right term?)
+/// from a formatted fraction number string.
+/// * `123` => `123`
+/// * `123.13` => `123`
+/// * `0.1234` => `0`
+/// * `-10.1234` => `-10`
+fn get_whole_part(string: &str) -> &str {
+    // if it doesn't contain "." the whole thing is returned
+    string.split('.').next().unwrap()
+}
+
+/// Get the fractional part from a formatted fraction number string.
+/// * `123` => `None`
+/// * `123.13` => `Some(13)`
+/// * `0.1234` => `Some(1234)`
+/// * `-10.1234` => `Some(1234)`
+fn get_fractional_part(string: &str) -> Option<&str> {
+    let mut split = string.split('.');
+    let _whole_part = split.next().unwrap();
+    split.next()
+}
+
+/// Consumes the whole number string and normalizes
+/// (if present) the fraction part. This means:
+/// * `123` => `123`
+/// * `123.13` => `123.13`
+/// * `0.1234000` => `0.1234`
+/// * `-10.000000` => `-10`
+fn normalize_fraction_part(string: &str) -> &str {
+    let whole_part = get_whole_part(string);
+    let fraction_part = get_fractional_part(string);
+    if fraction_part.is_none() {
+        return whole_part;
+    }
+    let fraction_part = fraction_part.unwrap();
+    let zeroes = fraction_part_count_zeroes(fraction_part);
+    if fraction_part.len() == zeroes {
+        whole_part
     } else {
-        fp
+        &string[0..string.len() - zeroes]
     }
 }
 
-/// Uses [`fraction_part_count_zeroes`] to remove unnecessary zeroes in a fraction string
-/// (only the fraction part).
-fn fraction_part_remove_zeroes(fraction_part: &str) -> String {
-    let zeroes = fraction_part_count_zeroes(fraction_part);
-    let slice = &fraction_part[0..fraction_part.len() - zeroes];
-    slice.to_string()
-}
-
-/// Tells that in "123000" (fraction part of "0.123000") are three unnecessary zeroes.
+/// Takes only the fraction part of a string without ".".
+/// Counts that in "123000" (fractional part of "0.123000") are three unnecessary zeroes.
+/// In "0.0000" there are four unnecessary zeroes.
 fn fraction_part_count_zeroes(fraction_part: &str) -> usize {
     let mut zeroes = 0;
     let chars = fraction_part.chars().collect::<Vec<char>>();
@@ -222,6 +196,8 @@ fn fraction_part_count_zeroes(fraction_part: &str) -> usize {
         let char = chars[i];
         if char == '0' {
             zeroes += 1;
+        } else {
+            break;
         }
     }
     zeroes
@@ -233,52 +209,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_fraction_number_parts() {
-        let num = -13.37_f64;
-        let num_fmt = format!("{:.2}", num);
-        let parts = get_fraction_number_parts(&num_fmt);
-        assert_eq!(true, parts.has_sign);
-        assert_eq!("13", parts.whole_part);
-        assert_eq!("37", parts.fraction_part.unwrap());
-
-        let num = 1411010_f64;
-        let num_fmt = format!("{}", num);
-        let parts = get_fraction_number_parts(&num_fmt);
-        assert_eq!(false, parts.has_sign);
-        assert_eq!("1411010", parts.whole_part);
-        assert_eq!(true, parts.fraction_part.is_none());
-    }
-
-    #[test]
     fn test_fraction_part_count_zeroes() {
         assert_eq!(3, fraction_part_count_zeroes("123000"));
         assert_eq!(0, fraction_part_count_zeroes("123"));
         assert_eq!(1, fraction_part_count_zeroes("0"));
-    }
-
-    #[test]
-    fn test_fraction_part_remove_zeroes() {
-        assert_eq!("123", fraction_part_remove_zeroes("123000"));
-        assert_eq!("123", fraction_part_remove_zeroes("123"));
-        assert_eq!("", fraction_part_remove_zeroes("0"));
-    }
-
-    #[test]
-    fn test_fraction_part_or_none() {
-        assert_eq!(
-            Some("123".to_owned()),
-            normalized_fraction_part_or_none(Some("123000".to_owned()))
-        );
-        assert_eq!(
-            Some("123".to_owned()),
-            normalized_fraction_part_or_none(Some("123".to_owned()))
-        );
-        assert_eq!(None, normalized_fraction_part_or_none(Some("0".to_owned())));
-        assert_eq!(
-            None,
-            normalized_fraction_part_or_none(Some("00000".to_owned()))
-        );
-        assert_eq!(None, normalized_fraction_part_or_none(None));
+        assert_eq!(11, fraction_part_count_zeroes("00000012800000000000"));
     }
 
     #[test]
@@ -286,10 +221,10 @@ mod tests {
         let res = fmt_align_fraction_strings(
             &vec!["-42", "0.3214", "1000", "-1000.2"].into_boxed_slice(),
         );
-        assert_eq!("  -42", res[0]);
+        assert_eq!("  -42     ", res[0]);
         assert_eq!("    0.3214", res[1]);
-        assert_eq!(" 1000", res[2]);
-        assert_eq!("-1000.2", res[3]);
+        assert_eq!(" 1000     ", res[2]);
+        assert_eq!("-1000.2   ", res[3]);
 
         let res = fmt_align_fractions(
             &vec![
@@ -301,10 +236,10 @@ mod tests {
             .into_boxed_slice(),
             4,
         );
-        assert_eq!("  -42", res[0]);
+        assert_eq!("  -42     ", res[0]);
         assert_eq!("    0.3214", res[1]);
-        assert_eq!(" 1000", res[2]);
-        assert_eq!("-1000.2", res[3]);
+        assert_eq!(" 1000     ", res[2]);
+        assert_eq!("-1000.2   ", res[3]);
     }
 
     #[test]

@@ -18,10 +18,10 @@ b) or **a list of f32/f64**
 "-1000.2"
 
 # Output
-"  -42"
+"  -42     "
 "    0.3214"
-" 1000"
-"-1000.2"
+" 1000     "
+"-1000.2   "
 ```
 
 ## Use case
@@ -54,8 +54,3 @@ fn main() {
     println!("{:#?}", aligned_2);
 }
 ```
-
-## Trivia
-I can't believe it takes so much Overhead to solve such a simple problem.
-Did I oversee something? If you find a simpler solution 
-please message me :)
