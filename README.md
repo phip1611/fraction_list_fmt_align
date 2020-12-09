@@ -1,4 +1,4 @@
-## Rust library: fraction_numbers_fmt_align
+## Rust library: fraction_list_fmt_align
 Formats a list of arbitrary fractional numbers (either string 
 or f32/f64) so that they are correctly aligned when printed 
 line by line. It also removes unnecessary zeroes. This means that
