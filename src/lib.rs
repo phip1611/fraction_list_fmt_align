@@ -254,4 +254,19 @@ mod tests {
         assert_eq!("1", res[0]);
         assert_eq!("1", res[1]);
     }
+
+    // tests that we get "NaN" and not a panic or so
+    #[test]
+    fn test_fmt_nan() {
+        let res = fmt_align_fractions(
+            &vec![
+                FractionNumber::F32(f32::NAN),
+                FractionNumber::F64(f64::NAN),
+            ],
+            20 // not important here
+        );
+
+        assert_eq!("NaN", res[0]);
+        assert_eq!("NaN", res[1]);
+    }
 }
