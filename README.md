@@ -1,5 +1,5 @@
 ## Rust library: fraction_numbers_fmt_align
-Formats a list of arbitrary fractional number (either string 
+Formats a list of arbitrary fractional numbers (either string 
 or f32/f64) so that they are correctly aligned when printed 
 line by line. It also removes unnecessary zeroes. This means that
 it rather returns "7" instead of "7.000000".

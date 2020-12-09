@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! Formats a list of arbitrary fractional number (either string or f32/f64) so that they are
+//! Formats a list of arbitrary fractional numbers (either string or f32/f64) so that they are
 //! correctly aligned when printed line by line. It also removes unnecessary zeroes. This means
 //! that it rather returns "7" instead of "7.000000".
 //!
