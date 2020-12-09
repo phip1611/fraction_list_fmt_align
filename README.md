@@ -26,15 +26,36 @@ b) or **a list of f32/f64**
 
 ## Use case
 If you want to write multiple fraction numbers of different
-lengths to the terminal or a file.
+lengths to the terminal or a file in an aligned/formatted way.
 
 ## How to use
-#### Cargo.toml
-```
+```rust
+use fraction_list_fmt_align::{fmt_align_fraction_strings, FractionNumber, fmt_align_fractions};
 
+fn main() {
+    let input_1 = vec![
+        "-42",
+        "0.3214",
+        "1000",
+        "-1000.2",
+    ];
+    let aligned_1 = fmt_align_fraction_strings(&input_1);
+    println!("{:#?}", aligned_1);
+
+    // or
+    let input_2 = vec![
+        FractionNumber::F32(-42.0),
+        FractionNumber::F64(0.3214),
+        FractionNumber::F64(1000.0),
+        FractionNumber::F64(-1000.2),
+    ];
+    let max_precision = 4;
+    let aligned_2 = fmt_align_fractions(&input_2, max_precision);
+    println!("{:#?}", aligned_2);
+}
 ```
 
 ## Trivia
-I can't believe it takes so much to solve such a simple problem.
+I can't believe it takes so much Overhead to solve such a simple problem.
 Did I oversee something? If you find a simpler solution 
 please message me :)
