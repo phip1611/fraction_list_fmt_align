@@ -1,0 +1,17 @@
+[package]
+name = "fraction_list_fmt_align"
+description = "Formats a list of arbitrary fractional number (either string or f32/f64) so that they are correctly aligned when printed line by line."
+version = "0.1.0"
+authors = ["Philipp Schuster <phip1611@gmail.com>"]
+edition = "2018"
+keywords = ["fraction", "fractional", "print", "align"]
+categories = ["command-line-interface"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/phip1611/fraction_list_fmt_align"
+repository = "https://github.com/phip1611/fraction_list_fmt_align"
+documentation = "https://docs.rs/fraction_list_fmt_align/"
+
+
+[dependencies]
+regex = "1.4.2"
