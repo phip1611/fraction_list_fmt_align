@@ -70,7 +70,7 @@ fn get_fraction_number_parts(formatted_fraction_num: &str) -> FractionNumberPart
             .name("whole_part")
             .map(|x| x.as_str().to_owned())
             .unwrap(),
-        fraction_part: fraction_part,
+        fraction_part,
     }
 }
 
@@ -173,7 +173,7 @@ pub fn fmt_align_fraction_strings(strings: &[&str]) -> Vec<String> {
 
         let spaces = max_len_whole_part_including_sign - current_len;
 
-        let mut regular_format = format!("{}", f.whole_part);
+        let mut regular_format = f.whole_part.to_string();
         if let Some(ref val) = f.fraction_part {
             regular_format = format!("{}.{}", regular_format, val);
         }
