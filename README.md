@@ -16,12 +16,14 @@ b) or **a list of f32/f64**
 "0.3214"
 "1000"
 "-1000.2"
+"2.00000"
 
 # Output
 "  -42     "
 "    0.3214"
 " 1000     "
 "-1000.2   "
+"    2     "
 ```
 
 ## Use case
@@ -54,3 +56,7 @@ fn main() {
     println!("{:#?}", aligned_2);
 }
 ```
+
+## Difference to `std::fmt`
+* This is more flexible and adjusts to a dynamic precission
+* his removes unnecessary zeroes, i.e. "0.000" will become "0"

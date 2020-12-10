@@ -31,6 +31,7 @@ SOFTWARE.
 //! "0.3214"
 //! "1000"
 //! "-1000.2"
+//! "2.00000"
 //! ```
 //! ## Example Output
 //! ```text
@@ -38,6 +39,7 @@ SOFTWARE.
 //! "    0.3214"
 //! " 1000     "
 //! "-1000.2   "
+//! "    2     "
 
 #[derive(Debug, Copy, Clone)]
 pub enum FractionNumber {
@@ -94,12 +96,17 @@ pub fn fmt_align_fractions(fractions: &[FractionNumber], max_precision: u8) -> V
 /// all of them can be printed line by line in an aligned way. This means that
 /// in every line the tens digits will be aligned, the once places will be aligned,
 /// the decimal place will be aligned etc. (TODO are these the proper english terms?)
+///
+/// This takes the precision from the longest fractional part (without unnecessary zeroes)
+/// to align all strings.
+///
 /// ## Example Input
 /// ```text
 /// "-42"
 /// "0.3214"
 /// "1000"
 /// "-1000.2"
+/// "2.00000"
 /// ```
 /// ## Example Output
 /// ```text
@@ -107,6 +114,7 @@ pub fn fmt_align_fractions(fractions: &[FractionNumber], max_precision: u8) -> V
 /// "    0.3214"
 /// " 1000     "
 /// "-1000.2   "
+/// "    2     "
 /// ```
 pub fn fmt_align_fraction_strings(strings: &[&str]) -> Vec<String> {
     // normalize all fractional parts
