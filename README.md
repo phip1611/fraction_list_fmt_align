@@ -30,6 +30,12 @@ b) or **a list of f32/f64**
 If you want to write multiple fraction numbers of different
 lengths to the terminal or a file in an aligned/formatted way.
 
+
+## Difference to `std::fmt`
+* This is more flexible than `println!()/format!()` because it adjusts to a dynamic precision
+  over multiple lines.
+* This removes unnecessary zeroes, i.e. "0.000" will become "0"
+
 ## How to use
 ```rust
 use fraction_list_fmt_align::{fmt_align_fraction_strings, FractionNumber, fmt_align_fractions};
@@ -56,7 +62,3 @@ fn main() {
     println!("{:#?}", aligned_2);
 }
 ```
-
-## Difference to `std::fmt`
-* This is more flexible and adjusts to a dynamic precission
-* his removes unnecessary zeroes, i.e. "0.000" will become "0"
