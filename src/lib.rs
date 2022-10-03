@@ -41,46 +41,90 @@ SOFTWARE.
 //! "-1000.2   "
 //! "    2     "
 
+#![deny(
+    clippy::all,
+    clippy::cargo,
+    clippy::nursery,
+    // clippy::restriction,
+    // clippy::pedantic
+)]
+// now allow a few rules which are denied by the above statement
+// --> they are ridiculous and not necessary
+#![allow(
+    clippy::fallible_impl_from,
+    clippy::needless_doctest_main,
+    clippy::redundant_pub_crate,
+    clippy::suboptimal_flops
+)]
+#![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
+#![deny(rustdoc::all)]
+
+/// Abstraction over floating point types [`f32`] and [`f64`].
 #[derive(Debug, Copy, Clone)]
 pub enum FractionNumber {
+    /// Variant for [`f32`].
     F32(f32),
+    /// Variant for [`f64`].
     F64(f64),
 }
 
 impl From<f32> for FractionNumber {
     fn from(val: f32) -> Self {
-        FractionNumber::F32(val)
+        Self::F32(val)
     }
 }
 
 impl From<f64> for FractionNumber {
     fn from(val: f64) -> Self {
-        FractionNumber::F64(val)
+        Self::F64(val)
     }
 }
 
 impl FractionNumber {
-    fn format(self, precision: u8) -> String {
+    fn format(self, precision: FormatPrecision) -> String {
         match self {
-            FractionNumber::F32(val) => {
-                format!("{:.1$}", val, precision as usize)
+            Self::F32(val) => {
+                format!("{val:.precision$}", val = val, precision = precision.val())
             }
-            FractionNumber::F64(val) => {
-                format!("{:.1$}", val, precision as usize)
+            Self::F64(val) => {
+                format!("{val:.precision$}", val = val, precision = precision.val())
             }
         }
+    }
+}
+
+/// The precision of decimal places for [`fmt_align_fractions`].
+#[derive(Copy, Clone, Debug)]
+pub enum FormatPrecision {
+    /// Format with exactly `n` decimal places.
+    Exact(u8),
+    /// Format with a maximum of `n` decimal places. Might happen that there is not a
+    /// single decimal place required.
+    Max(u8),
+}
+
+impl FormatPrecision {
+    const fn val(self) -> usize {
+        let val = match self {
+            Self::Exact(val) => val,
+            Self::Max(val) => val,
+        };
+        val as usize
     }
 }
 
 /// Convenient wrapper around [`fmt_align_fraction_strings`] that takes
 /// a slice of floating point values, formats them all with a maximum
 /// precision and returns a list of aligned, formatted strings.
-/// * `max_precision` Maximum precision. This means for example if `max_precision`
-///                   is 2 than "0.123" will become "0.12" whereas "2.000" will become "2".
-pub fn fmt_align_fractions(fractions: &[FractionNumber], max_precision: u8) -> Vec<String> {
+/// * `precision`: See [`FormatPrecision`].
+pub fn fmt_align_fractions(
+    fractions: &[FractionNumber],
+    precision: FormatPrecision,
+) -> Vec<String> {
     let fraction_strings = fractions
         .iter()
-        .map(|fr| fr.format(max_precision))
+        .map(|fr| fr.format(precision))
         .collect::<Vec<String>>();
 
     let str_vec = fraction_strings
@@ -118,11 +162,13 @@ pub fn fmt_align_fractions(fractions: &[FractionNumber], max_precision: u8) -> V
 /// ```
 pub fn fmt_align_fraction_strings(strings: &[&str]) -> Vec<String> {
     // normalize all fractional parts
-    let strings = strings.iter()
+    let strings = strings
+        .iter()
         .map(|x| normalize_fraction_part(x))
         .collect::<Vec<&str>>();
 
-    let max = strings.iter()
+    let max = strings
+        .iter()
         .map(|x| get_whole_part(x))
         .map(|x| x.len())
         .max()
@@ -242,7 +288,7 @@ mod tests {
                 FractionNumber::F64(-1000.2),
             ]
             .into_boxed_slice(),
-            4,
+            FormatPrecision::Max(4),
         );
         assert_eq!("  -42     ", res[0]);
         assert_eq!("    0.3214", res[1]);
@@ -257,7 +303,7 @@ mod tests {
 
         let res = fmt_align_fractions(
             &vec![FractionNumber::F32(1.0), FractionNumber::F64(1.0)].into_boxed_slice(),
-            4,
+            FormatPrecision::Max(4),
         );
         assert_eq!("1", res[0]);
         assert_eq!("1", res[1]);
@@ -267,11 +313,8 @@ mod tests {
     #[test]
     fn test_fmt_nan() {
         let res = fmt_align_fractions(
-            &vec![
-                FractionNumber::F32(f32::NAN),
-                FractionNumber::F64(f64::NAN),
-            ],
-            20 // not important here
+            &[FractionNumber::F32(f32::NAN), FractionNumber::F64(f64::NAN)],
+            FormatPrecision::Max(20), // not important here
         );
 
         assert_eq!("NaN", res[0]);
